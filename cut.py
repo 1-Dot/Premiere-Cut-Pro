@@ -58,9 +58,7 @@ def find_waves(image, color):
     image = handle_cv2_image(image)
     target_color = np.array(color[::-1])
     height, width, _ = image.shape
-    # 找到所有目标颜色的像素
     mask = np.all(image == target_color, axis=-1)
-    # 查找连续的条带
     start_positions = []
     current_start = None
     for x in range(width):
@@ -72,14 +70,13 @@ def find_waves(image, color):
                 and x - start_positions[-1][1] >= 10
                 or not len(start_positions)
             )
-        ):  # 只有一行，因此直接使用 `0` 行
+        ):
             if current_start is None:
                 current_start = x
         else:
             if current_start is not None:
                 start_positions.append((current_start, x - 1))
                 current_start = None
-    # 如果条带在行的末尾处仍然存在
     if current_start is not None:
         start_positions.append((current_start, width - 1))
     print(f'找到 {len(start_positions)} 个波条带')
@@ -100,7 +97,7 @@ def focus_window(title):
         print(f"没有找到 {title} 窗口")
 
 
-print('\n\033[9mFinal\033[0m Premiere Cut Pro\n')
+print('\n\033[9mFinal\033[0m Premiere Cut Pro by 1Dot\n')
 
 ag.PAUSE = 0.03
 
@@ -108,15 +105,10 @@ ag.PAUSE = 0.03
 while True:
     focus_window('Adobe Premiere Pro')
     time.sleep(0.1)
-    # print('等你 1 秒')
     time_start = time.time()
 
     print('开始细细的切做臊子\n-----------------')
     ag.press('c', _pause=False)
-
-    # 先定位每个波峰头，模拟点击上方时间轴，以柄左侧像素为基准查找柄位置，判断柄是否落在波峰头后，若是模拟按下键盘左箭头
-    # 查找柄位置，模拟按下C，模拟点击剪辑，奇数次时模拟按下V，模拟Shift+点击柄右侧28px
-    # 最后一点点滚动直到找不到柄，回去一点，重新再来，直到 rect_audioclip 为 None
 
     should_select = True
     is_first_time = True
@@ -176,7 +168,7 @@ while True:
         ag.PAUSE = 0.035
         for start, end in waves:
             if rect_timeline[0] + handle_x_init + start > rect_timeline[2] - 84:
-                print('距离面板右边框太近，先滚动')
+                print('距离面板右边框太近，暂不处理')
                 break
             ag.click(
                 rect_timeline[0] + handle_x_init + start,
@@ -196,7 +188,7 @@ while True:
             )
             handle_x = find_handle(img_handle, color_timeline)
             if handle_x + 1 >= handle_x_init + start:
-                print('柄跟波形重合了，左移一帧')
+                print('柄与波形重合，左移一帧')
                 ag.press('left')
                 img_handle = (
                     ag.screenshot()
@@ -229,8 +221,6 @@ while True:
                 ag.press('shift', _pause=False)
                 ag.press('c', _pause=False)
             should_select = not should_select
-        # 水平往后滚动到下一页
-        # ag.click(rect_timeline[2] - 42, rect_timeline[3] - 28)
         ag.PAUSE = 0.01
         ag.moveTo(
             rect_timeline[0]
@@ -268,11 +258,11 @@ while True:
                 ag.mouseDown()
                 ag.move(-3, 0)
                 ag.mouseUp()
-                print(f'滚动过头，新的一页，目前切了 {cut_count} 个')
+                print(f'滚动过度，开始新的一页，目前切了 {cut_count} 个')
                 break
         is_first_time = False
 
     ag.press('v', _pause=False)
 
     print(f'\n结束任务，{time.time() - time_start:.1f} 秒切了 {cut_count} 个')
-    input('回车以继续切下一个\n')
+    input('回车以继续切下一个，Ctrl+C 退出\n')
